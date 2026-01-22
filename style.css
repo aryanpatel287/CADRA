@@ -1,0 +1,143 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    background-color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+main {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+}
+
+.left-sidebar {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    background: darkcyan;
+}
+
+.canvas {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.right-sidebar {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    height: 100%;
+    background-color: darkcyan;
+}
+
+.create-element-btn {
+    background-color: whitesmoke;
+    border: none;
+    color: black;
+    padding: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 10px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+.create-element-btn:active {
+    scale: 0.95;
+}
+
+
+.element.selected {
+    border: 1px solid blue;
+}
+
+.border-div {
+    height: 200px;
+    width: 200px;
+    background: transparent;
+    position: absolute;
+    border: 1px solid blue;
+    display: none;
+}
+
+.border-div .handle {
+    height: 10px;
+    width: 10px;
+    background-color: #D9D9D9;
+    position: absolute;
+    border: 1px solid blue;
+}
+
+.n {
+    top: 0;
+    left: 50%;
+    transform: translate(-5px, -5px);
+    cursor: n-resize;
+}
+
+.e {
+    top: 50%;
+    right: 0;
+    transform: translate(5px, -5px);
+    cursor: e-resize;
+}
+
+.w {
+    top: 50%;
+    left: 0;
+    transform: translate(-5px, -5px);
+    cursor: w-resize;
+}
+
+.s {
+    bottom: 0;
+    left: 50%;
+    transform: translate(-5px, 5px);
+    cursor: s-resize;
+}
+
+.nw {
+    top: 0;
+    left: 0;
+    transform: translate(-5px, -5px);
+    cursor: nw-resize;
+}
+
+.ne {
+    top: 0;
+    right: 0;
+    transform: translate(5px, -5px);
+    cursor: ne-resize;
+}
+
+.sw {
+    bottom: 0;
+    left: 0;
+    transform: translate(-5px, 5px);
+    cursor: sw-resize;
+}
+
+.se {
+    bottom: 0;
+    right: 0;
+    transform: translate(5px, 5px);
+    cursor: se-resize;
+}
