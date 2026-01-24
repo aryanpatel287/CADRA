@@ -6,25 +6,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CADRA</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/fonts/remixicon.css" rel="stylesheet" />
 </head>
 
 <body>
     <main>
+        <!-- LEFT SIDEBAR -->
         <section class="left-sidebar sidebar">
-            <button class="create-element-btn">Create Element</button>
         </section>
-        <section class="canvas">
-            <div class="border-div">
-                <div class="n handle"></div>
-                <div class="e handle"></div>
-                <div class="s handle"></div>
-                <div class="w handle"></div>
-                <div class="nw handle"></div>
-                <div class="sw handle"></div>
-                <div class="se handle"></div>
-                <div class="ne handle"></div>
+
+
+        <!-- TOOLBAR -->
+        <section class="toolbar">
+            <i class="tool ri-cursor-line" data-toolName="select"></i>
+            <i class="tool ri-rectangle-line" data-toolName="rectangle"></i>
+            <i class="tool ri-text" data-toolName="text"></i>
+        </section>
+
+
+        <!-- CANVAS -->
+        <section class="canvas-wrapper">
+            <div class="canvas">
+                <img src="icons8-select-cursor-96.png" alt="" class="canvas-cursor">
+                <div class="border-div">
+                    <div class="n handle"></div>
+                    <div class="e handle"></div>
+                    <div class="s handle"></div>
+                    <div class="w handle"></div>
+                    <div class="nw handle"></div>
+                    <div class="sw handle"></div>
+                    <div class="se handle"></div>
+                    <div class="ne handle"></div>
+                    <div class="element-size-wrapper">
+                        <span class="width-size">30000</span><span>x</span><span class="height-size">3000</span>
+                    </div>
+                </div>
             </div>
         </section>
+
+
+        <!-- RIGHT SIDEBAR -->
         <section class="right-sidebar"></section>
     </main>
     <script src="script.js"></script>
