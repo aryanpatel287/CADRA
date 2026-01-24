@@ -7,12 +7,28 @@
     <title>CADRA</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/fonts/remixicon.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
     <main>
         <!-- LEFT SIDEBAR -->
         <section class="left-sidebar sidebar">
+            <div class="panel-header">Layers</div>
+            <div class="layers-list" id="layersList">
+                <div><span class="layer-name">Element Type ID</span>
+                    <div class="layer-actions">
+                        <button class="layer-btn" data-action="up" data-id=""><i
+                                class="ri-arrow-up-line"></i></button>
+                        <button class="layer-btn" data-action="down" data-id=""><i
+                                class="ri-arrow-down-line"></i></button>
+                    </div>
+                </div>
+            </div>
         </section>
 
 
