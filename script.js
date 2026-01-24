@@ -6,9 +6,10 @@ let resizeHandles = document.querySelector('.border-div')
 let canvasDimensions = canvas.getBoundingClientRect()
 let elementSizeBadge = { width: document.querySelector('.element-size-wrapper .width-size'), height: document.querySelector('.element-size-wrapper .height-size') }
 let toolbar = document.querySelector('.toolbar')
+let layerList = document.querySelector('.layers-list')
 let tools = Array.from(toolbar.children)
 let allelements = []
-let currentZIndex = 0
+let maxZIndex = 0
 let canvasZoom = 1
 
 let state = {
@@ -143,7 +144,6 @@ function updateElementData(element, id) {
     }
 }
 
-
 //-------------------------------------------------------------------------------------------------------
 //Function to handle positions and zoom related to canvas
 //-------------------------------------------------------------------------------------------------------
@@ -209,15 +209,77 @@ function handleCanvasZoom() {
 
 
 //-------------------------------------------------------------------------------------------------------
+//Functions related to Layers Panel
+//-------------------------------------------------------------------------------------------------------
+// function moveLayerUp(element) {
+//     console.log(element.zIndex)
+//     if (element.id < maxZIndex) {
+//         let swapElement = allelements.find(e => e.zIndex === (element.zIndex + 1))
+//         console.log(swapElement)
+//         if (swapElement) {
+//             console.log(swapElement.zIndex)
+//         }
+//     }
+
+// }
+function layerListUpdate() {
+    layerList.innerHTML = ''
+
+    let sortedElements = allelements.sort((a, b) => b.zIndex - a.zIndex)
+
+    sortedElements.forEach(element => {
+        let layerItem = document.createElement('div')
+        layerItem.className = 'layer-item';
+        layerItem.innerHTML = `<span class="layer-name">${element.type}${element.id}</span>
+                    <div class="layer-actions">
+                        <button class="layer-btn" data-action="up" data-id="${element.id}"><i class="ri-arrow-up-line"></i></button>
+                        <button class="layer-btn" data-action="down" data-id="${element.id}"><i class="ri-arrow-down-line"></i></button>
+                    </div>`
+
+        layerItem.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('layer-btn')) {
+                state.isSelection = true
+                showSelectedElement(element.element, e)
+            }
+        });
+
+        // Layer order buttons (tried new thing)
+        // let upBtn = layerItem.querySelector('[data-action="up"]');
+        // let downBtn = layerItem.querySelector('[data-action="down"]');
+
+        // upBtn.addEventListener('click', (e) => {
+        //     e.stopPropagation();
+        //     moveLayerUp(element);
+        // });
+
+        // downBtn.addEventListener('click', (e) => {
+        //     e.stopPropagation();
+        //     moveLayerDown(element);
+        // });
+
+        layerList.appendChild(layerItem)
+    })
+
+
+}
+
+
+//-------------------------------------------------------------------------------------------------------
 //Functions related to highlighting selected element in the canvas
 //-------------------------------------------------------------------------------------------------------
-function showSelectedElement(e) {
+function showSelectedElement(element, e = null) {
     if (state.selectedTool != 'select') return
     state.elementClicked = true
     state.isSelection = true
-    e.stopPropagation();
-    state.selectedElement = e.srcElement
-    let selectedElementDetails = window.getComputedStyle(e.srcElement)
+    if (e) e.stopPropagation();
+
+    if (element && element.target) {
+        state.selectedElement = element.target || element.srcElement
+    } else {
+        state.selectedElement = element
+    }
+
+    let selectedElementDetails = window.getComputedStyle(state.selectedElement)
     positionResizeHandles(selectedElementDetails)
 }
 
@@ -506,10 +568,11 @@ function createRectangle() {
             state.selectedElement.classList.add('element')
             state.selectedElement.id = allelements.length
             allelements.push(saveElementData(state.selectedElement, 'rectangle'))
-            state.selectedElement.addEventListener('click', showSelectedElement)
+            state.selectedElement.addEventListener('click', (e) => showSelectedElement(e.target || e.srcElement, e))
             state.isDragging = false
             positionResizeHandles(state.selectedElement)
             deselectTool('rectangle')
+            layerListUpdate()
         }
 
     }
@@ -549,8 +612,8 @@ function createRectangle() {
         newRect.style.left = StartingPointX + 'px'
         newRect.style.width = '0px'
         newRect.style.height = '0px'
-        newRect.style.zIndex = currentZIndex
-        currentZIndex++
+        newRect.style.zIndex = maxZIndex
+        maxZIndex++
         state.selectedElement = newRect
         canvas.appendChild(state.selectedElement)
         canvas.addEventListener('mousemove', calculateRectSize)
