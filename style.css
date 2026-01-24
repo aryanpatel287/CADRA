@@ -84,6 +84,7 @@ main {
 .layer-name {
     color: #e0e0e0;
     font-size: 13px;
+    pointer-events: none;
 }
 
 .layer-actions {
