@@ -38,6 +38,7 @@ function saveElementData(element, type) {
         id: element.id,
         type: type,
         element: element,
+        zIndex: element.style.zIndex,
         dimensions: {
             width: parseFloat(element.style.width),
             height: parseFloat(element.style.height),
@@ -93,6 +94,7 @@ function updateElementData(element, id) {
         id: element.id,
         type: allelements[id].type,
         element: element,
+        zIndex: element.style.zIndex,
         dimensions: {
             width: parseFloat(element.style.width),
             height: parseFloat(element.style.height),
@@ -237,7 +239,7 @@ function positionResizeHandles(elementDetails) {
     resizeHandles.style.left = (parseFloat(elementDetails.left) - 1) + 'px'
     //elementZindex was passsed as a string so we had to conver it in a number
     resizeHandles.style.zIndex = parseInt(elementDetails.zIndex) + 1
-    
+
     //Size Badge Render
     elementSizeBadge.width.textContent = parseInt(elementDetails.width)
     elementSizeBadge.height.textContent = parseInt(elementDetails.height)
@@ -542,7 +544,7 @@ function createRectangle() {
         StartingPointX = startPos.x
         StartingPointY = startPos.y
         newRect.style.position = 'absolute'
-        newRect.style.background = 'red'
+        newRect.style.background = '#D9D9D9'
         newRect.style.top = StartingPointY + 'px'
         newRect.style.left = StartingPointX + 'px'
         newRect.style.width = '0px'
