@@ -7,9 +7,9 @@ let canvasDimensions = canvas.getBoundingClientRect()
 let elementSizeBadge = { width: document.querySelector('.element-size-wrapper .width-size'), height: document.querySelector('.element-size-wrapper .height-size') }
 let toolbar = document.querySelector('.toolbar')
 let tools = Array.from(toolbar.children)
-let elements = []
+let allelements = []
 let currentZIndex = 0
-
+let canvasZoom = 1
 
 let state = {
     selectedElement: null,
@@ -18,7 +18,7 @@ let state = {
     isSelection: false,
     isResizing: false,
     isDragging: false,
-    resizeStart: {
+    toModifyElement: {
         selectedHandle: '',
         startWidth: 0,
         startHeight: 0,
@@ -27,9 +27,12 @@ let state = {
         startMouseX: 0,
         startMouseY: 0,
     },
-    dragOffset: { x: 0, y: 0 }
 }
 
+
+//-------------------------------------------------------------------------------------------------------
+//Function to handle elements data
+//-------------------------------------------------------------------------------------------------------
 function saveElementData(element, type) {
     let elementData = {
         id: element.id,
@@ -85,7 +88,63 @@ function saveElementData(element, type) {
     return elementData
 
 }
+function updateElementData(element, id) {
+    allelements[id] = {
+        id: element.id,
+        type: allelements[id].type,
+        element: element,
+        dimensions: {
+            width: parseFloat(element.style.width),
+            height: parseFloat(element.style.height),
+        },
+        position: {
+            top: parseFloat(element.style.top),
+            left: parseFloat(element.style.left),
+        },
+        elementArea: {
+            fromY: parseFloat(element.style.top),
+            fromX: parseFloat(element.style.left),
+            toX: parseFloat(element.style.left) + parseFloat(element.style.width),
+            toY: parseFloat(element.style.top) + parseFloat(element.style.height),
+        },
+        getData: function () {
 
+            let computedStyle = window.getComputedStyle(element)
+            console.log(computedStyle)
+            return {
+                id: element.id,
+                type: type,
+                position: {
+                    top: parseFloat(computedStyle.top),
+                    left: parseFloat(computedStyle.left),
+                    bottom: parseFloat(computedStyle.bottom),
+                    right: parseFloat(computedStyle.right)
+                },
+                dimensions: {
+                    width: computedStyle.width,
+                    height: computedStyle.height
+                },
+                style: {
+                    backgroundColor: computedStyle.backgroundColor,
+                    borderColor: computedStyle.borderColor,
+                    borderWidth: computedStyle.borderWidth,
+                    borderStyle: computedStyle.borderStyle,
+                    opacity: computedStyle.opacity,
+                    zIndex: computedStyle.zIndex,
+                    transform: computedStyle.transform,
+                    display: computedStyle.display,
+                    position: computedStyle.position
+                },
+                classList: element.classList,
+            }
+        }
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------------
+//Function to handle positions and zoom related to canvas
+//-------------------------------------------------------------------------------------------------------
 function setCanvasAtCenter() {
     let wrapperHeight = canvasWrapper.clientHeight
     let wrapperWidth = canvasWrapper.clientWidth
@@ -102,10 +161,33 @@ function setCanvasAtCenter() {
 function getCanvasRelativePosition(clientX, clientY) {
     const rect = canvas.getBoundingClientRect()
     return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
+        x: (clientX - rect.left) / canvasZoom,
+        y: (clientY - rect.top) / canvasZoom
     }
 }
+
+function handleCanvasZoom() {
+    canvasWrapper.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey) return
+        console.log(e.deltaY)
+        e.preventDefault()
+
+        const zoomIntensity = 0.1
+        const delta = e.deltaY > 0 ? -zoomIntensity : zoomIntensity
+
+        canvasZoom += delta
+        canvasZoom = Math.max(0.1, Math.min(canvasZoom, 4))
+
+        canvas.style.transform = `scale(${canvasZoom})`
+        canvas.style.transformOrigin = 'center center'
+
+        console.log('Zoom:', canvasZoom)
+
+    })
+} handleCanvasZoom()
+//-------------------------------------------------------------------------------------------------------
+//Function to handle elements selection
+//-------------------------------------------------------------------------------------------------------
 // //code to handle canvas cursor image
 // function moveCanvasCursor(e) {
 //     const x = e.clientX - canvasDimensions.left - 2
@@ -136,6 +218,7 @@ function showSelectedElement(e) {
     let selectedElementDetails = window.getComputedStyle(e.srcElement)
     positionResizeHandles(selectedElementDetails)
 }
+
 function deselectElement() {
     if (state.isSelection === false) return
     resizeHandles.style.display = 'none'
@@ -145,6 +228,7 @@ function deselectElement() {
     resizeHandles.style.left = 0 + 'px'
     state.elementClicked = false
 }
+
 function positionResizeHandles(elementDetails) {
     resizeHandles.style.display = 'block'
     resizeHandles.style.height = ((parseFloat(elementDetails.height)) + 1) + 'px'
@@ -153,16 +237,10 @@ function positionResizeHandles(elementDetails) {
     resizeHandles.style.left = (parseFloat(elementDetails.left) - 1) + 'px'
     //elementZindex was passsed as a string so we had to conver it in a number
     resizeHandles.style.zIndex = parseInt(elementDetails.zIndex) + 1
-
+    
     //Size Badge Render
     elementSizeBadge.width.textContent = parseInt(elementDetails.width)
     elementSizeBadge.height.textContent = parseInt(elementDetails.height)
-}
-
-function dragElementStart(e) {
-    if (state.isResizing == true) return
-    console.log(e)
-    console.log('isdrag')
 }
 
 function checkElementExist(clientX, clientY) {
@@ -171,12 +249,11 @@ function checkElementExist(clientX, clientY) {
     let x = ClickedCoords.x
     let y = ClickedCoords.y
 
-    elements.forEach(elem => {
+    state.elementClicked = false
+    allelements.forEach(elem => {
         let areaExist = elem.elementArea
-        if (areaExist.fromX <= x && x <= areaExist.toY || areaExist.formY <= y && y <= areaExist.toY) {
-            return state.elementClicked = true
-        } else {
-            return state.elementClicked = false
+        if (areaExist.fromX <= x && x <= areaExist.toX && areaExist.fromY <= y && y <= areaExist.toY) {
+            state.elementClicked = true
         }
     })
 }
@@ -187,10 +264,66 @@ function handleCanvasMouseEvents(e) {
         deselectElement(e)
     }
     else {
-        canvas.addEventListener('mousedown',dragElementStart(e))
+        console.log('dragelement called')
     }
 }
 canvas.addEventListener('click', handleCanvasMouseEvents)
+
+
+//-------------------------------------------------------------------------------------------------------
+// functions to handle element Drag 
+//-------------------------------------------------------------------------------------------------------
+function dragElementFunction() {
+    canvas.addEventListener('mousedown', dragElementStart)
+    function dragElementStart(e) {
+        if (state.isResizing == true) return
+        if (state.selectedTool !== 'select') return
+        if (!e.target.classList.contains('element') && !e.target.classList.contains('border-div')) return
+        resizeHandles.style.pointerEvents = 'none'
+        state.isDragging = true
+        if (e.target.classList.contains('border-div')) {
+            // Already have selectedElement from selection
+        } else {
+            state.selectedElement = e.target
+        }
+
+        state.toModifyElement.startMouseX = e.clientX
+        state.toModifyElement.startMouseY = e.clientY
+        state.toModifyElement.startLeft = parseFloat(e.target.style.left)
+        state.toModifyElement.startTop = parseFloat(e.target.style.top)
+        canvas.addEventListener('mousemove', dragElement)
+        canvas.addEventListener('mouseup', dragElementEnd)
+    }
+    function dragElement(e) {
+        element = state.selectedElement
+        let dragOffsetX = e.clientX - state.toModifyElement.startMouseX
+        let dragOffsetY = e.clientY - state.toModifyElement.startMouseY
+
+        console.log('startMouseX:', state.toModifyElement.startMouseX)
+        console.log('e.clientX:', e.clientX)
+        console.log('dragOffsetX:', dragOffsetX)
+        console.log('startMouseY:', state.toModifyElement.startMouseY)
+        console.log('e.clientY:', e.clientY)
+        console.log('dragOffsetY:', dragOffsetY)
+
+        element.style.left = (state.toModifyElement.startLeft + dragOffsetX) + 'px'
+        element.style.top = (state.toModifyElement.startTop + dragOffsetY) + 'px'
+
+        console.log('element.style.left:', element.style.left)
+        console.log('element.style.top:', element.style.top)
+
+        let updatedRectDetails = window.getComputedStyle(element)
+        positionResizeHandles(updatedRectDetails)
+    }
+    function dragElementEnd() {
+        canvas.removeEventListener('mousemove', dragElement)
+        canvas.removeEventListener('mouseup', dragElementEnd)
+        resizeHandles.style.pointerEvents = 'auto'
+        state.isDragging = false
+        updateElementData(state.selectedElement, state.selectedElement.id)
+    }
+
+} dragElementFunction()
 
 
 //-------------------------------------------------------------------------------------------------------
@@ -205,14 +338,14 @@ function resizeStart(e) {
     e.stopPropagation();
 
     let elementStyle = window.getComputedStyle(state.selectedElement)
-    state.resizeStart.startWidth = parseFloat(elementStyle.width)
-    state.resizeStart.startHeight = parseFloat(elementStyle.height)
-    state.resizeStart.startTop = parseFloat(elementStyle.top)
-    state.resizeStart.startLeft = parseFloat(elementStyle.left)
-    state.resizeStart.startMouseX = e.clientX
-    state.resizeStart.startMouseY = e.clientY
+    state.toModifyElement.startWidth = parseFloat(elementStyle.width)
+    state.toModifyElement.startHeight = parseFloat(elementStyle.height)
+    state.toModifyElement.startTop = parseFloat(elementStyle.top)
+    state.toModifyElement.startLeft = parseFloat(elementStyle.left)
+    state.toModifyElement.startMouseX = e.clientX
+    state.toModifyElement.startMouseY = e.clientY
 
-    state.resizeStart.selectedHandle = e.target.classList.value.split(' ')[0]
+    state.toModifyElement.selectedHandle = e.target.classList.value.split(' ')[0]
 
     canvas.addEventListener('mousemove', handleResize)
     canvas.addEventListener('mouseup', resizeEnd)
@@ -221,123 +354,123 @@ function resizeStart(e) {
 
 function handleResize(e) {
 
-    let deltaY = e.clientY - state.resizeStart.startMouseY
-    let deltaX = e.clientX - state.resizeStart.startMouseX
+    let deltaY = e.clientY - state.toModifyElement.startMouseY
+    let deltaX = e.clientX - state.toModifyElement.startMouseX
     let element = state.selectedElement
 
     let newHeight = 0
     let newWidth = 0
 
-    switch (state.resizeStart.selectedHandle) {
+    switch (state.toModifyElement.selectedHandle) {
         case 'n':
-            newHeight = state.resizeStart.startHeight - deltaY
+            newHeight = state.toModifyElement.startHeight - deltaY
             if (newHeight >= 0) {
                 element.style.height = newHeight + 'px'
-                element.style.top = (state.resizeStart.startTop + deltaY) + 'px'
+                element.style.top = (state.toModifyElement.startTop + deltaY) + 'px'
             } else {
                 element.style.height = Math.abs(newHeight) + 'px'
-                element.style.top = (state.resizeStart.startTop + state.resizeStart.startHeight) + 'px'
+                element.style.top = (state.toModifyElement.startTop + state.toModifyElement.startHeight) + 'px'
             }
             break;
 
         case 's':
-            newHeight = state.resizeStart.startHeight + deltaY
+            newHeight = state.toModifyElement.startHeight + deltaY
             if (newHeight >= 0) {
                 element.style.height = newHeight + 'px'
             } else {
                 element.style.height = Math.abs(newHeight) + 'px'
-                element.style.top = (state.resizeStart.startTop - Math.abs(newHeight)) + 'px'
+                element.style.top = (state.toModifyElement.startTop - Math.abs(newHeight)) + 'px'
             }
             break;
 
         case 'e':
-            newWidth = state.resizeStart.startWidth + deltaX
+            newWidth = state.toModifyElement.startWidth + deltaX
             if (newWidth >= 0) {
                 element.style.width = newWidth + 'px'
             } else {
                 element.style.width = Math.abs(newWidth) + 'px'
-                element.style.left = (state.resizeStart.startLeft - Math.abs(newWidth)) + 'px'
+                element.style.left = (state.toModifyElement.startLeft - Math.abs(newWidth)) + 'px'
             }
             break;
 
         case 'w':
-            newWidth = state.resizeStart.startWidth - deltaX
+            newWidth = state.toModifyElement.startWidth - deltaX
             if (newWidth >= 0) {
                 element.style.width = newWidth + 'px'
-                element.style.left = (state.resizeStart.startLeft + deltaX) + 'px'
+                element.style.left = (state.toModifyElement.startLeft + deltaX) + 'px'
             } else {
                 element.style.width = Math.abs(newWidth) + 'px'
-                element.style.left = (state.resizeStart.startLeft + state.resizeStart.startWidth) + 'px'
+                element.style.left = (state.toModifyElement.startLeft + state.toModifyElement.startWidth) + 'px'
             }
             break;
         case 'ne':
-            newHeight = state.resizeStart.startHeight - deltaY
-            newWidth = state.resizeStart.startWidth + deltaX
+            newHeight = state.toModifyElement.startHeight - deltaY
+            newWidth = state.toModifyElement.startWidth + deltaX
             if (newHeight >= 0) {
                 element.style.height = newHeight + 'px'
-                element.style.top = (state.resizeStart.startTop + deltaY) + 'px'
+                element.style.top = (state.toModifyElement.startTop + deltaY) + 'px'
             } else {
                 element.style.height = Math.abs(newHeight) + 'px'
-                element.style.top = (state.resizeStart.startTop + state.resizeStart.startHeight) + 'px'
+                element.style.top = (state.toModifyElement.startTop + state.toModifyElement.startHeight) + 'px'
             }
 
             if (newWidth >= 0) {
                 element.style.width = newWidth + 'px'
             } else {
                 element.style.width = Math.abs(newWidth) + 'px'
-                element.style.left = (state.resizeStart.startLeft - Math.abs(newWidth)) + 'px'
+                element.style.left = (state.toModifyElement.startLeft - Math.abs(newWidth)) + 'px'
             }
             break;
         case 'nw':
-            newHeight = state.resizeStart.startHeight - deltaY
-            newWidth = state.resizeStart.startWidth - deltaX
+            newHeight = state.toModifyElement.startHeight - deltaY
+            newWidth = state.toModifyElement.startWidth - deltaX
             if (newHeight >= 0) {
                 element.style.height = newHeight + 'px'
-                element.style.top = (state.resizeStart.startTop + deltaY) + 'px'
+                element.style.top = (state.toModifyElement.startTop + deltaY) + 'px'
             } else {
                 element.style.height = Math.abs(newHeight) + 'px'
-                element.style.top = (state.resizeStart.startTop + state.resizeStart.startHeight) + 'px'
+                element.style.top = (state.toModifyElement.startTop + state.toModifyElement.startHeight) + 'px'
             }
 
             if (newWidth >= 0) {
                 element.style.width = newWidth + 'px'
-                element.style.left = (state.resizeStart.startLeft + deltaX) + 'px'
+                element.style.left = (state.toModifyElement.startLeft + deltaX) + 'px'
             } else {
                 element.style.width = Math.abs(newWidth) + 'px'
-                element.style.left = (state.resizeStart.startLeft + state.resizeStart.startWidth) + 'px'
+                element.style.left = (state.toModifyElement.startLeft + state.toModifyElement.startWidth) + 'px'
             }
             break;
         case 'se':
-            newHeight = state.resizeStart.startHeight + deltaY
-            newWidth = state.resizeStart.startWidth + deltaX
+            newHeight = state.toModifyElement.startHeight + deltaY
+            newWidth = state.toModifyElement.startWidth + deltaX
             if (newHeight >= 0) {
                 element.style.height = newHeight + 'px'
             } else {
                 element.style.height = Math.abs(newHeight) + 'px'
-                element.style.top = (state.resizeStart.startTop - Math.abs(newHeight)) + 'px'
+                element.style.top = (state.toModifyElement.startTop - Math.abs(newHeight)) + 'px'
             }
             if (newWidth >= 0) {
                 element.style.width = newWidth + 'px'
             } else {
                 element.style.width = Math.abs(newWidth) + 'px'
-                element.style.left = (state.resizeStart.startLeft - Math.abs(newWidth)) + 'px'
+                element.style.left = (state.toModifyElement.startLeft - Math.abs(newWidth)) + 'px'
             }
             break;
         case 'sw':
-            newHeight = state.resizeStart.startHeight + deltaY
-            newWidth = state.resizeStart.startWidth - deltaX
+            newHeight = state.toModifyElement.startHeight + deltaY
+            newWidth = state.toModifyElement.startWidth - deltaX
             if (newHeight >= 0) {
                 element.style.height = newHeight + 'px'
             } else {
                 element.style.height = Math.abs(newHeight) + 'px'
-                element.style.top = (state.resizeStart.startTop - Math.abs(newHeight)) + 'px'
+                element.style.top = (state.toModifyElement.startTop - Math.abs(newHeight)) + 'px'
             }
             if (newWidth >= 0) {
                 element.style.width = newWidth + 'px'
-                element.style.left = (state.resizeStart.startLeft + deltaX) + 'px'
+                element.style.left = (state.toModifyElement.startLeft + deltaX) + 'px'
             } else {
                 element.style.width = Math.abs(newWidth) + 'px'
-                element.style.left = (state.resizeStart.startLeft + state.resizeStart.startWidth) + 'px'
+                element.style.left = (state.toModifyElement.startLeft + state.toModifyElement.startWidth) + 'px'
             }
             break;
     }
@@ -369,12 +502,12 @@ function createRectangle() {
         canvas.style.cursor = 'default'
         if (state.isDragging && state.selectedElement) {
             state.selectedElement.classList.add('element')
-            state.selectedElement.id = elements.length
-            elements.push(saveElementData(state.selectedElement, 'rectangle'))
+            state.selectedElement.id = allelements.length
+            allelements.push(saveElementData(state.selectedElement, 'rectangle'))
             state.selectedElement.addEventListener('click', showSelectedElement)
             state.isDragging = false
-            state.selectedTool = 'select'
-
+            positionResizeHandles(state.selectedElement)
+            deselectTool('rectangle')
         }
 
     }
@@ -427,7 +560,6 @@ function createRectangle() {
 }
 
 
-
 //-------------------------------------------------------------------------------------------------------
 //Function to handle toolbar events
 //-------------------------------------------------------------------------------------------------------
@@ -438,7 +570,20 @@ function highlightSelectedTool(e) {
     e.target.classList.add('active')
     state.selectedTool = e.target.dataset.toolname
 }
-
+function deselectTool(toolType) {
+    switch (toolType) {
+        case 'rectangle':
+            document.querySelector('.select-tool').classList.add('active')
+            document.querySelector('.rectangle-tool').classList.remove('active')
+            state.selectedTool = 'select'
+            break;
+        case 'text':
+            document.querySelector('.select-tool').classList.add('active')
+            document.querySelector('.text-tool').classList.remove('active')
+            state.selectedTool = 'select'
+            break;
+    }
+}
 function createElements(e) {
     highlightSelectedTool(e)
     let UsingTool = state.selectedTool
@@ -446,7 +591,8 @@ function createElements(e) {
         case 'rectangle':
             createRectangle();
             break;
-        // case 'select' : 
+        case 'select': //Default
+
     }
 }
 
